@@ -1,0 +1,3 @@
+headers = mylib.h
+headerFilter = mylib.h
+package = com.abyxcz.cbindingkmp.cinterop
