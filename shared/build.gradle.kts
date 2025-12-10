@@ -4,8 +4,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    id("com.abyxcz.cbinding")
+    `maven-publish`
 }
-
 kotlin {
     androidTarget {
         compilerOptions {
@@ -73,14 +74,13 @@ android {
 }
 
 
-val generateJni by tasks.registering(com.abyxcz.buildlogic.JniGeneratorTask::class) {
+// Access the task registered by the plugin
+val generateJni = tasks.named("generateJni", com.abyxcz.buildlogic.JniGeneratorTask::class) {
     inputDir.set(file("../native/c"))
-    outputDir.set(layout.buildDirectory.dir("generated/jni"))
 }
 
-// Make sure preBuild depends on it so files exist
-tasks.named("preBuild").configure {
-    dependsOn(generateJni)
+val javadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
 }
 
 // Add generated Kotlin code to source sets
@@ -89,5 +89,34 @@ kotlin {
         androidMain {
             kotlin.srcDir(generateJni.map { it.outputDir })
         }
+    }
+}
+
+publishing {
+    publications.withType<MavenPublication> {
+        artifact(javadocJar)
+        pom {
+            name.set("C-Binding KMP Shared")
+            description.set("Shared library with C-binding helpers")
+            url.set("https://github.com/abyxcz/CBindingKMP")
+            licenses {
+                license {
+                    name.set("MIT")
+                    url.set("https://opensource.org/licenses/MIT")
+                }
+            }
+            developers {
+                developer {
+                    id.set("abyxcz")
+                    name.set("Abyxcz")
+                }
+            }
+            scm {
+                url.set("https://github.com/abyxcz/CBindingKMP")
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
     }
 }

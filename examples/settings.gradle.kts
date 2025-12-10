@@ -1,4 +1,4 @@
-rootProject.name = "CBindingKMP"
+rootProject.name = "SampleApplication"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -12,8 +12,8 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+        mavenLocal()
     }
-    includeBuild("plugin")
 }
 
 dependencyResolutionManagement {

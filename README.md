@@ -31,8 +31,9 @@ This project provides the "glue" so you can focus on writing C code and calling 
     - `build.gradle.kts`: Configures the KMP targets and registers the `generateJni` task.
     - `src/nativeInterop/cinterop`: Configuration for iOS/Native bindings.
     - `src/androidMain`: Wired to use the generated JNI code.
-- **`buildSrc`**: Contains the build logic for automation.
+- **`plugin`**: A standalone Gradle plugin module containing the automation logic.
     - `src/main/kotlin/.../JniGeneratorTask.kt`: The logic that parses headers and generates code.
+    - `src/main/kotlin/.../CBindingPlugin.kt`: The plugin entry point.
 - **`composeApp`**: Sample KMP application demonstrating usage.
 
 ## Usage
@@ -84,12 +85,11 @@ actual fun multiply(a: Int, b: Int): Int {
 
 ## Implementation Details
 
-### JNI Generator
-The `JniGeneratorTask` provides a lightweight way to bridge C and JNI. It uses loose regex matching to find function declarations in `.h` files and produces the necessary JNI boilerplate.
-- **Input**: `native/c/*.h`
-- **Output**:
-    - `jni_gen_bridge.c`: Included in the CMake build.
-    - `GeneratedNative.kt`: Added to the `androidMain` source set.
+### JNI Generator Plugin
+The logic is encapsulated in a Gradle Plugin (`com.abyxcz.cbinding`) located in the `plugin` directory. It registers the `generateJni` task which:
+- Scans `native/c/*.h`.
+- Generates `jni_gen_bridge.c` and `GeneratedNative.kt`.
+- Is automatically wired into the build lifecycle.
 
 ### CMake Integration
 The `shared/build.gradle.kts` configures the Android plugin to use `externalNativeBuild` pointing to `native/c/CMakeLists.txt`. This ensures the C code (and generated bridge) is compiled into the app's native libraries.
