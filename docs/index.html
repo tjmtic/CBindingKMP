@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBindingKMP | Automated Native Bridges for Kotlin Multiplatform</title>
+    <meta name="description" content="CBindingKMP is a powerful automation framework that eliminates JNI and CInterop boilerplate, allowing you to bridge C/C++ code to Kotlin Multiplatform seamlessly.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+  <script type="module" crossorigin src="/assets/index-DLcrf_1i.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-D7ub8Rwi.css">
+</head>
+<body class="dark-mode">
+    <nav class="glass-nav">
+        <div class="container nav-content">
+            <div class="logo">
+                <img src="/logo.png" alt="CBindingKMP Logo" class="logo-img">
+                <span class="logo-text">CBindingKMP</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How it Works</a></li>
+                <li><a href="https://github.com/abyxcz/CBindingKMP/tree/main/docs" target="_blank">Documentation</a></li>
+                <li><a href="https://github.com/abyxcz/CBindingKMP" class="btn btn-outline">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-bg" style="background-image: url('/hero-bg.png');"></div>
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h1 class="animate-up">Native Power, <span class="gradient-text">Zero Boilerplate</span></h1>
+            <p class="hero-subtitle animate-up delay-1">The ultimate automation bridge for C/C++ in Kotlin Multiplatform. Write your logic once, call it everywhere.</p>
+            <div class="hero-ctas animate-up delay-2">
+                <a href="#get-started" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/abyxcz/CBindingKMP/blob/main/docs/architecture.md" class="btn btn-glass">Learn Architecture</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title text-center">Engineered for <span class="gradient-text">Productivity</span></h2>
+            <div class="feature-grid">
+                <div class="feature-card glass animate-fade-in">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Automated JNI</h3>
+                    <p>Stop writing manual JNI headers and wrappers. Our plugin parses your C headers and generates the bridge automatically.</p>
+                </div>
+                <div class="feature-card glass animate-fade-in">
+                    <div class="feature-icon">🛠</div>
+                    <h3>Unified Source</h3>
+                    <p>Maintain a single source of truth for your native logic. Changes in C implementations are reflected in Kotlin instantly.</p>
+                </div>
+                <div class="feature-card glass animate-fade-in">
+                    <div class="feature-icon">📱</div>
+                    <h3>Full KMP Support</h3>
+                    <p>Designed for Android (JNI), iOS (CInterop), JVM, and Native targets. One tool for your entire multiplatform stack.</p>
+                </div>
+                <div class="feature-card glass animate-fade-in">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Gradle Integrated</h3>
+                    <p>Seamlessly integrates into your Gradle build cycle. No extra build steps required for your developers.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="how-it-works glass-section">
+        <div class="container split-layout">
+            <div class="text-content">
+                <h2>How it <span class="gradient-text">Works</span></h2>
+                <p>CBindingKMP acts as the intelligent glue between your C code and Kotlin libraries. It interprets your function signatures and generates high-performance wrappers tailored for each target platform.</p>
+                <ul class="step-list">
+                    <li><span class="step-num">1</span> Write your C function in a standard header.</li>
+                    <li><span class="step-num">2</span> Let the Gradle task generate JNI and Kotlin bindings.</li>
+                    <li><span class="step-num">3</span> Call the function directly from your shared Kotlin code.</li>
+                </ul>
+            </div>
+            <div class="code-preview glass">
+                <div class="code-header">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="file-name">mylib.h</span>
+                </div>
+                <pre><code><span class="keyword">int</span> <span class="function">add_numbers</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);</code></pre>
+                
+                <div class="code-divider"></div>
+                
+                <div class="code-header">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    <span class="file-name">SharedLogic.kt</span>
+                </div>
+                <pre><code><span class="keyword">import</span> com.generated.add_numbersJNI
+
+<span class="keyword">fun</span> <span class="function">add</span>(a: Int, b: Int): Int {
+    <span class="keyword">return</span> <span class="function">add_numbersJNI</span>(a, b)
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="get-started" class="cta-section">
+        <div class="container text-center">
+            <h2>Ready to <span class="gradient-text">Accelerate</span>?</h2>
+            <p>Join the future of high-performance Kotlin Multiplatform development.</p>
+            <div class="cta-group">
+                <code>./gradlew :shared:assemble</code>
+                <a href="https://github.com/abyxcz/CBindingKMP/blob/main/docs/getting-started.md" class="btn btn-primary">Start Building Now</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="glass-footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <img src="/logo.png" alt="Logo" class="footer-logo">
+                <p>&copy; 2024 CBindingKMP. Built for performance.</p>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/abyxcz/CBindingKMP">GitHub</a>
+                <a href="https://github.com/abyxcz/CBindingKMP/tree/main/docs">Docs</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
