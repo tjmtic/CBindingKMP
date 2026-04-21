@@ -381,6 +381,81 @@ pre {
     transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Article Styles */
+.small-hero {
+    height: 40vh;
+    min-height: 300px;
+}
+
+.article-body {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.prose h2 {
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.5rem;
+}
+
+.prose h3 {
+    font-size: 1.75rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.prose p {
+    margin-bottom: 1.5rem;
+    color: var(--text-main);
+    font-size: 1.2rem;
+}
+
+.prose .lead {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    font-weight: 300;
+}
+
+.prose ol, .prose ul {
+    margin-bottom: 2rem;
+    padding-left: 2rem;
+}
+
+.prose li {
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.glass-code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    font-family: var(--font-mono);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.pill {
+    padding: 0.5rem 1.25rem;
+    background: rgba(0, 242, 255, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(0, 242, 255, 0.2);
+    border-radius: 100px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 @media (max-width: 968px) {
     h1 { font-size: 3rem; }
     .split-layout { grid-template-columns: 1fr; }
