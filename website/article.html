@@ -75,6 +75,84 @@
 
             <hr>
 
+            <h2>How It Works: Under the Hood</h2>
+            <p>The architecture is designed to be seamless. Here's how the automation flow looks:</p>
+            
+            <div class="mermaid-container animate-fade-in">
+                <div class="mermaid">
+graph TD
+    subgraph "Source"
+        C["C Headers (.h)"]
+        Impl["C Implementation (.c)"]
+    end
+
+    subgraph "JNI Generator Plugin"
+        Task["generateJni Task"]
+        Parser["Regex Parser"]
+        GenC["jni_gen_bridge.c"]
+        GenK["GeneratedNative.kt"]
+    end
+
+    subgraph "Compilation"
+        CMake["CMake (Android/JVM)"]
+        CInterop["cinterop (iOS/Native)"]
+    end
+
+    subgraph "Final Artifacts"
+        Lib["Shared Library (.so / .dylib)"]
+        Klib["Kotlin Library (.klib)"]
+    end
+
+    C --> Task
+    Task --> Parser
+    Parser --> GenC
+    Parser --> GenK
+    Impl --> CMake
+    GenC --> CMake
+    C --> CInterop
+    CMake --> Lib
+    CInterop --> Klib
+    GenK --> Klib
+                </div>
+            </div>
+
+            <h3>Type Mapping</h3>
+            <p>We handle the heavy lifting of type conversion between C, JNI, and Kotlin types:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>C Type</th>
+                        <th>JNI Type</th>
+                        <th>Kotlin Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>int</code></td>
+                        <td><code>jint</code></td>
+                        <td><code>Int</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>float</code></td>
+                        <td><code>jfloat</code></td>
+                        <td><code>Float</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>double</code></td>
+                        <td><code>jdouble</code></td>
+                        <td><code>Double</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>void</code></td>
+                        <td><code>void</code></td>
+                        <td><code>Unit</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <hr>
+
             <h2>Quick Start: From C to Kotlin in 3 Steps</h2>
             
             <h3>1. Define your C function</h3>
@@ -84,9 +162,11 @@
             <pre class="glass-code"><code>./gradlew :shared:assemble</code></pre>
 
             <h3>3. Call from Kotlin</h3>
+            <p>The generated bindings are ready to use immediately:</p>
             <pre class="glass-code"><code><span class="keyword">import</span> com.abyxcz.cbindingkmp.shared.generated.add_numbersJNI
 
-<span class="keyword">val</span> result = <span class="function">add_numbersJNI</span>(10, 20)</code></pre>
+<span class="keyword">val</span> result = <span class="function">add_numbersJNI</span>(10, 20)
+<span class="function">println</span>(<span class="string">"Result from C: $result"</span>)</code></pre>
 
             <hr>
 
@@ -97,8 +177,29 @@
                 <span class="pill">📱 Full Platform Support</span>
                 <span class="pill">⚙️ Gradle Integrated</span>
             </div>
+
+            <p style="margin-top: 3rem;">If you're building performance-intensive apps—think image processing, cryptography, or edge AI—CBindingKMP lets you focus on the logic, not the plumbing.</p>
+            
+            <p>Check out the project on <a href="https://github.com/abyxcz/CBindingKMP" class="gradient-text">GitHub</a> and let us know what you think!</p>
         </section>
     </main>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#00f2ff',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#7000ff',
+                lineColor: '#bf00ff',
+                secondaryColor: '#7000ff',
+                tertiaryColor: '#050a14'
+            }
+        });
+    </script>
 
     <footer class="glass-footer">
         <div class="container footer-content">

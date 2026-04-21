@@ -456,6 +456,59 @@ pre {
     font-size: 0.9rem;
 }
 
+/* Tables */
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.prose th, .prose td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.prose th {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.prose tr:last-child td {
+    border-bottom: none;
+}
+
+.prose code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 3rem 0;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: center;
+}
+
+.mermaid {
+    background: transparent !important;
+}
+
 @media (max-width: 968px) {
     h1 { font-size: 3rem; }
     .split-layout { grid-template-columns: 1fr; }
