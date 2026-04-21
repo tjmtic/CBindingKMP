@@ -1,0 +1,1 @@
+import"./main-BSeMIoMi.js";import r from"https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";r.initialize({startOnLoad:!0,theme:"dark",securityLevel:"loose",themeVariables:{primaryColor:"#00f2ff",primaryTextColor:"#fff",primaryBorderColor:"#7000ff",lineColor:"#bf00ff",secondaryColor:"#7000ff",tertiaryColor:"#050a14"}});
