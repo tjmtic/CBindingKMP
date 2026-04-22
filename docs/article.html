@@ -1,32 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBindingKMP | Bridging the Gap</title>
     <meta name="description" content="Read our featured article on automating C associations in Kotlin Multiplatform.">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/CBindingKMP/style.css">
 </head>
+
 <body class="dark-mode">
     <nav class="glass-nav">
         <div class="container nav-content">
             <div class="logo">
                 <a href="/" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-                    <img src="/logo.png" alt="CBindingKMP Logo" class="logo-img">
+                    <img src="/CBindingKMP/logo.png" alt="CBindingKMP Logo" class="logo-img">
                     <span class="logo-text">CBindingKMP</span>
                 </a>
             </div>
             <ul class="nav-links">
-                <li><a href="/index.html#features">Features</a></li>
-                <li><a href="/index.html#how-it-works">How it Works</a></li>
-                <li><a href="/article.html" class="active">Article</a></li>
-                <li><a href="https://github.com/abyxcz/CBindingKMP" class="btn btn-outline">GitHub</a></li>
+                <li><a href="/CBindingKMP/index.html#features">Features</a></li>
+                <li><a href="/CBindingKMP/index.html#how-it-works">How it Works</a></li>
+                <li><a href="/CBindingKMP/article.html" class="active">Article</a></li>
+                <li><a href="https://github.com/tjmtic/CBindingKMP" class="btn btn-outline">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -40,32 +44,42 @@
         </div>
     </header>
 
-    <main class="container article-body glass-section animate-fade-in" style="margin-top: -60px; position: relative; z-index: 10; padding: 40px; border-radius: 20px; margin-bottom: 80px;">
+    <main class="container article-body glass-section animate-fade-in"
+        style="margin-top: -60px; position: relative; z-index: 10; padding: 40px; border-radius: 20px; margin-bottom: 80px;">
         <div class="article-hero-image" style="margin-bottom: 40px; text-align: center;">
-            <img src="/assets/hero.png" alt="CBindingKMP Hero" style="max-width: 100%; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+            <img src="/CBindingKMP/assets/hero.png" alt="CBindingKMP Hero"
+                style="max-width: 100%; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
         </div>
 
         <section class="prose">
-            <p class="lead">Integrating native C/C++ code into a Kotlin Multiplatform (KMP) project often feels like paying a "native tax." You have to maintain multiple glue layers: JNI for Android and JVM, CInterop for iOS and Native, and often redundant build logic in CMake and Gradle.</p>
-            
-            <p>What if you could maintain a single C source directory and have the bindings generated for you automatically?</p>
-            
-            <p>Introducing <strong>CBindingKMP</strong> — a library designed to automate the bridge between your performance-critical C code and your KMP applications.</p>
+            <p class="lead">Integrating native C/C++ code into a Kotlin Multiplatform (KMP) project often feels like
+                paying a "native tax." You have to maintain multiple glue layers: JNI for Android and JVM, CInterop for
+                iOS and Native, and often redundant build logic in CMake and Gradle.</p>
+
+            <p>What if you could maintain a single C source directory and have the bindings generated for you
+                automatically?</p>
+
+            <p>Introducing <strong>CBindingKMP</strong> — a library designed to automate the bridge between your
+                performance-critical C code and your KMP applications.</p>
 
             <hr>
 
             <h2>The Problem: The "Native Tax"</h2>
             <p>When you decide to use C in a KMP project, you typically face three distinct challenges:</p>
             <ol>
-                <li><strong>Android & JVM</strong>: You must write manual JNI wrappers and use CMake to build shared libraries.</li>
-                <li><strong>iOS & Native</strong>: You need to configure .def files and use Kotlin/Native's CInterop tool.</li>
-                <li><strong>Synchronization</strong>: Every time you change a C function signature, you have to manually update the JNI wrapper, the Kotlin external fun declaration, and the CInterop headers.</li>
+                <li><strong>Android & JVM</strong>: You must write manual JNI wrappers and use CMake to build shared
+                    libraries.</li>
+                <li><strong>iOS & Native</strong>: You need to configure .def files and use Kotlin/Native's CInterop
+                    tool.</li>
+                <li><strong>Synchronization</strong>: Every time you change a C function signature, you have to manually
+                    update the JNI wrapper, the Kotlin external fun declaration, and the CInterop headers.</li>
             </ol>
 
             <hr>
 
             <h2>The Solution: CBindingKMP</h2>
-            <p>CBindingKMP turns your C headers into a <strong>Single Source of Truth</strong>. By pointing our Gradle plugin to your headers, it automatically:</p>
+            <p>CBindingKMP turns your C headers into a <strong>Single Source of Truth</strong>. By pointing our Gradle
+                plugin to your headers, it automatically:</p>
             <ul>
                 <li>Parses your C function declarations.</li>
                 <li>Generates JNI-compliant C wrappers for Android and JVM.</li>
@@ -77,42 +91,42 @@
 
             <h2>How It Works: Under the Hood</h2>
             <p>The architecture is designed to be seamless. Here's how the automation flow looks:</p>
-            
+
             <div class="mermaid-container animate-fade-in">
                 <div class="mermaid">
-graph TD
-    subgraph "Source"
-        C["C Headers (.h)"]
-        Impl["C Implementation (.c)"]
-    end
+                    graph TD
+                    subgraph "Source"
+                    C["C Headers (.h)"]
+                    Impl["C Implementation (.c)"]
+                    end
 
-    subgraph "JNI Generator Plugin"
-        Task["generateJni Task"]
-        Parser["Regex Parser"]
-        GenC["jni_gen_bridge.c"]
-        GenK["GeneratedNative.kt"]
-    end
+                    subgraph "JNI Generator Plugin"
+                    Task["generateJni Task"]
+                    Parser["Regex Parser"]
+                    GenC["jni_gen_bridge.c"]
+                    GenK["GeneratedNative.kt"]
+                    end
 
-    subgraph "Compilation"
-        CMake["CMake (Android/JVM)"]
-        CInterop["cinterop (iOS/Native)"]
-    end
+                    subgraph "Compilation"
+                    CMake["CMake (Android/JVM)"]
+                    CInterop["cinterop (iOS/Native)"]
+                    end
 
-    subgraph "Final Artifacts"
-        Lib["Shared Library (.so / .dylib)"]
-        Klib["Kotlin Library (.klib)"]
-    end
+                    subgraph "Final Artifacts"
+                    Lib["Shared Library (.so / .dylib)"]
+                    Klib["Kotlin Library (.klib)"]
+                    end
 
-    C --> Task
-    Task --> Parser
-    Parser --> GenC
-    Parser --> GenK
-    Impl --> CMake
-    GenC --> CMake
-    C --> CInterop
-    CMake --> Lib
-    CInterop --> Klib
-    GenK --> Klib
+                    C --> Task
+                    Task --> Parser
+                    Parser --> GenC
+                    Parser --> GenK
+                    Impl --> CMake
+                    GenC --> CMake
+                    C --> CInterop
+                    CMake --> Lib
+                    CInterop --> Klib
+                    GenK --> Klib
                 </div>
             </div>
 
@@ -154,9 +168,10 @@ graph TD
             <hr>
 
             <h2>Quick Start: From C to Kotlin in 3 Steps</h2>
-            
+
             <h3>1. Define your C function</h3>
-            <pre class="glass-code"><code><span class="keyword">int</span> <span class="function">add_numbers</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);</code></pre>
+            <pre
+                class="glass-code"><code><span class="keyword">int</span> <span class="function">add_numbers</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);</code></pre>
 
             <h3>2. Build the project</h3>
             <pre class="glass-code"><code>./gradlew :shared:assemble</code></pre>
@@ -178,15 +193,17 @@ graph TD
                 <span class="pill">⚙️ Gradle Integrated</span>
             </div>
 
-            <p style="margin-top: 3rem;">If you're building performance-intensive apps—think image processing, cryptography, or edge AI—CBindingKMP lets you focus on the logic, not the plumbing.</p>
-            
-            <p>Check out the project on <a href="https://github.com/abyxcz/CBindingKMP" class="gradient-text">GitHub</a> and let us know what you think!</p>
+            <p style="margin-top: 3rem;">If you're building performance-intensive apps—think image processing,
+                cryptography, or edge AI—CBindingKMP lets you focus on the logic, not the plumbing.</p>
+
+            <p>Check out the project on <a href="https://github.com/tjmtic/CBindingKMP" class="gradient-text">GitHub</a>
+                and let us know what you think!</p>
         </section>
     </main>
 
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ 
+        mermaid.initialize({
             startOnLoad: true,
             theme: 'dark',
             securityLevel: 'loose',
@@ -204,16 +221,17 @@ graph TD
     <footer class="glass-footer">
         <div class="container footer-content">
             <div class="footer-brand">
-                <img src="/logo.png" alt="Logo" class="footer-logo">
+                <img src="/CBindingKMP/logo.png" alt="Logo" class="footer-logo">
                 <p>&copy; 2024 CBindingKMP. Built for performance.</p>
             </div>
             <div class="footer-links">
-                <a href="https://github.com/abyxcz/CBindingKMP">GitHub</a>
-                <a href="/index.html">Home</a>
+                <a href="https://github.com/tjmtic/CBindingKMP">GitHub</a>
+                <a href="/CBindingKMP/index.html">Home</a>
             </div>
         </div>
     </footer>
 
-    <script type="module" src="/main.js"></script>
+    <script type="module" src="/CBindingKMP/main.js"></script>
 </body>
+
 </html>
