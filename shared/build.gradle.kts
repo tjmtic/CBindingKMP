@@ -89,6 +89,9 @@ kotlin {
         androidMain {
             kotlin.srcDir(generateJni.map { it.outputDir })
         }
+        jvmMain {
+            kotlin.srcDir(generateJni.map { it.outputDir })
+        }
     }
 }
 
