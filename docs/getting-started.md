@@ -17,27 +17,24 @@ To use CBindingKMP in your project, apply the Gradle plugin in your `shared/buil
 
 ```kotlin
 plugins {
-    id("com.abyxcz.cbinding") version "1.0.0"
+    id("com.abyxcz.cbinding") version "1.1.0"
 }
 
 kotlin {
     // Configure your KMP targets (android, ios, jvm, etc.)
 }
 
-// Register the JNI generation task
-val generateJni = tasks.named("generateJni", com.abyxcz.buildlogic.JniGeneratorTask::class) {
-    inputDir.set(file("../native/c")) // Directory containing your .h and .c files
-}
-
-// Add generated code to the Android source set
-kotlin {
-    sourceSets {
-        androidMain {
-            kotlin.srcDir(generateJni.map { it.outputDir })
-        }
-    }
+// Configure the generator. Task registration and source-set wiring (androidMain,
+// jvmMain) are handled by the plugin.
+cbinding {
+    headersDir.set(file("../native/c"))       // Directory containing your .h files
+    includeHeaders.set(listOf("mylib.h"))     // #include lines in the generated bridge
+    jniPackage.set("com.example.generated")   // Package of the generated Kotlin bindings
+    kotlinFileName.set("MyLibNative")         // Generated Kotlin file name
 }
 ```
+
+The plugin is currently consumed via composite build (`pluginManagement { includeBuild(".../CBindingKMP/plugin") }` in your `settings.gradle.kts`) or `publishToMavenLocal` + `mavenLocal()`.
 
 ## Your First Native Function
 
@@ -84,7 +81,7 @@ fun performAddition(a: Int, b: Int): Int {
 ```
 
 > [!NOTE]
-> On iOS, the `NativeLoader.load()` call is a no-op as the symbols are statically linked. The generated `add_numbersJNI` function bridges the platform differences for you.
+> On iOS, the `NativeLoader.load()` call is a no-op: the C code is compiled into a per-target static archive and linked via cinterop `staticLibraries` — see [iOS Prebuilt Linking](ios-prebuilt-linking.md). iOS code calls the cinterop symbol (`add_numbers`) directly rather than the JNI wrapper; the recommended pattern is a small `expect`/`actual` facade — see [Supported C Subset](supported-c-subset.md) for the recipe and the buffer-marshalling table.
 
 ## Next Steps
 

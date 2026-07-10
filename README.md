@@ -1,6 +1,6 @@
 # C-Binding KMP Library Automation
 
-[![Kotlin](https://img.shields.io/badge/kotlin-1.9.22-blue.svg?logo=kotlin)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.2.21-blue.svg?logo=kotlin)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-latest-informational)](https://abyxcz.github.io/CBindingKMP/docs/introduction.html)
 
@@ -22,10 +22,13 @@ The goal is to allow developers to maintain a single C/C++ codebase (e.g., `src/
 
 ## ✨ Key Features
 
-- **🚀 Zero Glue Code**: Automatically generate JNI wrappers and Kotlin bindings.
-- **🛠 Unified Source**: All C code lives in `native/c`. No more multiple glue layers.
-- **📱 Multi-Platform**: Support for Android, iOS, JVM, and Native targets out-of-the-box.
-- **⚙️ Gradle Integrated**: Custom `generateJni` task fits seamlessly into your build workflow.
+- **🚀 Generated Glue**: JNI bridge C and Kotlin `external fun` bindings generated from your headers, with spec-correct symbol mangling.
+- **📦 Real Buffers**: Zero-copy direct `ByteBuffer` marshalling plus primitive-array overloads (`GetPrimitiveArrayCritical`) — pass pixel/model buffers to C, get results back.
+- **🔩 Opaque Handles**: `typedef struct X X;` handles cross the boundary as `Long`.
+- **🍏 iOS Static Linking**: per-target static archives via `staticLibraries`, plus a documented recipe for third-party xcframeworks (inference runtimes etc.).
+- **⚙️ `cbinding {}` DSL**: configure headers, include names, JNI package and output; source sets are wired automatically.
+
+The generator supports a **documented C subset** (scalars, primitive pointers, opaque handles) and fails loudly on anything else — see [docs/supported-c-subset.md](docs/supported-c-subset.md).
 
 ## 📁 Project Structure
 
@@ -42,12 +45,24 @@ The goal is to allow developers to maintain a single C/C++ codebase (e.g., `src/
 int add_numbers(int a, int b);
 ```
 
-### 2. Build the project
+### 2. Configure the generator
+```kotlin
+// build.gradle.kts
+plugins { id("com.abyxcz.cbinding") version "1.1.0" }
+
+cbinding {
+    headersDir.set(file("native/c"))
+    includeHeaders.set(listOf("mylib.h"))
+    jniPackage.set("com.example.generated")
+}
+```
+
+### 3. Build the project
 ```bash
 ./gradlew :shared:assemble
 ```
 
-### 3. Call from Kotlin
+### 4. Call from Kotlin
 ```kotlin
 import com.abyxcz.cbindingkmp.shared.generated.add_numbersJNI
 

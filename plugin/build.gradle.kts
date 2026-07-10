@@ -21,7 +21,7 @@ tasks.withType<Test>().configureEach {
 }
 
 group = "com.abyxcz.cbinding"
-version = "1.0.0"
+version = "1.1.0"
 
 gradlePlugin {
     plugins {
