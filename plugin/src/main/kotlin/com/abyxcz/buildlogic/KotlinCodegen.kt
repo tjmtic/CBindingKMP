@@ -12,22 +12,50 @@ object KotlinCodegen {
         sb.append("package ${config.jniPackage}\n\n")
 
         model.functions.forEach { func ->
-            val kotlinName = func.name + "JNI"
-            val kotlinArgs = func.params.joinToString(", ") { p ->
-                "${p.name}: ${toKotlinType(p.type)}"
+            appendVariant(sb, func, byteBufferVariant = true)
+            if (func.params.any { it.type.isConstU8Pointer() }) {
+                appendVariant(sb, func, byteBufferVariant = false)
             }
-            val kotlinReturn = toKotlinType(func.returnType)
-            sb.append("internal external fun $kotlinName($kotlinArgs): $kotlinReturn\n")
         }
 
         return sb.toString()
     }
 
-    internal fun toKotlinType(cType: String): String = when (cType) {
-        "int" -> "Int"
-        "void" -> "Unit"
+    private fun CType.isConstU8Pointer(): Boolean =
+        this is CType.Pointer && pointee == "uint8_t" && isConst
+
+    private fun appendVariant(sb: StringBuilder, func: CFunction, byteBufferVariant: Boolean) {
+        val kotlinName = func.name + (if (byteBufferVariant) "" else "Arr") + "JNI"
+        val args = func.params.joinToString(", ") { p ->
+            "${p.name}: ${kotlinType(p.type, byteBufferVariant)}"
+        }
+        sb.append("internal external fun $kotlinName($args): ${kotlinReturnType(func.returnType)}\n")
+    }
+
+    private fun kotlinType(t: CType, byteBufferVariant: Boolean): String = when (t) {
+        is CType.Scalar -> scalarKotlinType(t.name)
+        is CType.OpaqueHandle -> "Long"
+        is CType.Pointer -> when (t.pointee) {
+            "uint8_t" ->
+                if (t.isConst && byteBufferVariant) "java.nio.ByteBuffer" else "ByteArray"
+            "float" -> "FloatArray"
+            "int32_t" -> "IntArray"
+            else -> error("Unsupported pointee: ${t.pointee}")
+        }
+    }
+
+    private fun kotlinReturnType(t: CType): String = when (t) {
+        is CType.Scalar -> scalarKotlinType(t.name)
+        is CType.OpaqueHandle -> "Long"
+        is CType.Pointer -> error("unreachable: parser rejects pointer returns")
+    }
+
+    private fun scalarKotlinType(name: String): String = when (name) {
+        "int", "int32_t" -> "Int"
+        "int64_t", "size_t" -> "Long"
         "float" -> "Float"
         "double" -> "Double"
-        else -> error("Unsupported C type for Kotlin generation: '$cType'")
+        "void" -> "Unit"
+        else -> error("Unsupported scalar: $name")
     }
 }
