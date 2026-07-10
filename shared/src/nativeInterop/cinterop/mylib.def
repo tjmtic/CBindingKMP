@@ -1,3 +1,7 @@
 headers = mylib.h
 headerFilter = mylib.h
 package = com.abyxcz.cbindingkmp.cinterop
+
+# The prebuilt archive is compiled per Kotlin/Native target by the compileMylib* Gradle
+# tasks; its directory is supplied per-target via cinterop extraOpts (-libraryPath).
+staticLibraries = libmylib.a

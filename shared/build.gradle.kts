@@ -20,13 +20,44 @@ kotlin {
     )
 
     nativeTargets.forEach { target ->
+        // Compile the C sources into a static archive for this exact target, so the
+        // cinterop klib carries real code (previously the demo C was never linked into
+        // Kotlin/Native at all — .def had headers only).
+        val sdk = if (target.name == "iosArm64") "iphoneos" else "iphonesimulator"
+        val triple = if (target.name == "iosArm64") {
+            "arm64-apple-ios12.0"
+        } else {
+            "arm64-apple-ios12.0-simulator"
+        }
+        val libDir = layout.buildDirectory.dir("native/${target.name}")
+        val compileMylib = tasks.register<Exec>(
+            "compileMylib${target.name.replaceFirstChar { it.uppercase() }}"
+        ) {
+            val srcFile = file("../native/c/mylib.c")
+            val includeDir = file("../native/c")
+            inputs.file(srcFile)
+            inputs.dir(includeDir)
+            outputs.dir(libDir)
+            commandLine(
+                "bash", "-c",
+                "mkdir -p \"${libDir.get().asFile}\" && " +
+                    "xcrun --sdk $sdk clang -target $triple -O2 -c \"$srcFile\" " +
+                    "-I\"$includeDir\" -o \"${libDir.get().asFile}/mylib.o\" && " +
+                    "ar rcs \"${libDir.get().asFile}/libmylib.a\" \"${libDir.get().asFile}/mylib.o\""
+            )
+        }
+
         target.compilations.getByName("main") {
             val mylib by cinterops.creating {
                 defFile(project.file("src/nativeInterop/cinterop/mylib.def"))
                 packageName("com.abyxcz.cbindingkmp.cinterop")
                 includeDirs.headerFilterOnly(project.file("../native/c"))
                 includeDirs(project.file("../native/c"))
+                extraOpts("-libraryPath", libDir.get().asFile.absolutePath)
             }
+        }
+        tasks.named("cinteropMylib${target.name.replaceFirstChar { it.uppercase() }}") {
+            dependsOn(compileMylib)
         }
     }
     
