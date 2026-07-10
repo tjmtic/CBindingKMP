@@ -77,6 +77,24 @@ class CHeaderParserTest {
     }
 
     @Test
+    fun `extern C guard is tolerated`() {
+        val model = CHeaderParser.parse(
+            """
+            #ifdef __cplusplus
+            extern "C" {
+            #endif
+
+            int add_numbers(int a, int b);
+
+            #ifdef __cplusplus
+            }
+            #endif
+            """.trimIndent()
+        )
+        assertEquals(listOf("add_numbers"), model.functions.map { it.name })
+    }
+
+    @Test
     fun `void parameter list means no params`() {
         val model = CHeaderParser.parse("int get_answer(void);")
         assertEquals(emptyList(), model.functions.single().params)

@@ -68,7 +68,11 @@ object CHeaderParser {
         val noBlock = content.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), " ")
         return noBlock.lines()
             .filterNot { it.trimStart().startsWith("#") }
-            .joinToString("\n") { it.substringBefore("//") }
+            .map { it.substringBefore("//") }
+            // Standard C++ compatibility guard: the preprocessor conditionals around it are
+            // already stripped, so drop the guard itself and its closing brace line.
+            .filterNot { it.trim() == "extern \"C\" {" || it.trim() == "}" }
+            .joinToString("\n")
     }
 
     private fun parseFunction(decl: String, opaqueTypes: Set<String>): CFunction {
