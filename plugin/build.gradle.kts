@@ -10,6 +10,9 @@ repositories {
 }
 
 dependencies {
+    // compileOnly: at runtime the consumer's own KGP is on the classpath; the
+    // sourceSets API used here is stable across the versions we support.
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21")
     testImplementation(kotlin("test"))
 }
 

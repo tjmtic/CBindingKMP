@@ -74,25 +74,15 @@ android {
 }
 
 
-// Access the task registered by the plugin
-val generateJni = tasks.named("generateJni", com.abyxcz.buildlogic.JniGeneratorTask::class) {
-    inputDir.set(file("../native/c"))
+// Configure the C binding generator (task registration + source-set wiring are
+// handled by the plugin).
+cbinding {
+    headersDir.set(file("../native/c"))
+    includeHeaders.set(listOf("mylib.h"))
 }
 
 val javadocJar by tasks.registering(Jar::class) {
     archiveClassifier.set("javadoc")
-}
-
-// Add generated Kotlin code to source sets
-kotlin {
-    sourceSets {
-        androidMain {
-            kotlin.srcDir(generateJni.map { it.outputDir })
-        }
-        jvmMain {
-            kotlin.srcDir(generateJni.map { it.outputDir })
-        }
-    }
 }
 
 publishing {
