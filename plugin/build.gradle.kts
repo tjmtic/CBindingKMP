@@ -9,6 +9,14 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    testImplementation(kotlin("test"))
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
 group = "com.abyxcz.cbinding"
 version = "1.0.0"
 
