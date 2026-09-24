@@ -1,0 +1,93 @@
+name: Publish Gradle plugin
+
+# Tag-driven publish (same pattern as the ViewPoint libs):
+#   push a tag vX.Y.Z  ->  com.abyxcz.cbinding:cbinding-plugin:X.Y.Z
+#                          + plugin marker com.abyxcz.cbinding:com.abyxcz.cbinding.gradle.plugin:X.Y.Z
+#   or run manually with an explicit version.
+# The verify job then resolves the plugin by id from GitHub Packages in an empty
+# consumer build — proof that `plugins { id("com.abyxcz.cbinding") version "X.Y.Z" }` works.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 1.1.0). Blank = build.gradle.kts default.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - id: v
+        name: Resolve version
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then V="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"
+          else V=""; fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Publishing version: ${V:-<build.gradle.kts default>}"
+      - name: Test
+        run: ./gradlew -p plugin test --console=plain
+      - name: Publish to GitHub Packages
+        run: |
+          ARGS=""
+          [[ -n "${{ steps.v.outputs.version }}" ]] && ARGS="-PlibVersion=${{ steps.v.outputs.version }}"
+          ./gradlew -p plugin publishAllPublicationsToGitHubPackagesRepository $ARGS --console=plain
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify:
+    needs: publish
+    if: needs.publish.outputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+      - name: Resolve the plugin by id in an empty consumer
+        env:
+          GPR_USER: ${{ github.actor }}
+          GPR_KEY: ${{ secrets.GITHUB_TOKEN }}
+          V: ${{ needs.publish.outputs.version }}
+        run: |
+          mkdir consumer && cd consumer
+          cat > settings.gradle.kts <<KTS
+          pluginManagement {
+              repositories {
+                  maven {
+                      url = uri("https://maven.pkg.github.com/tjmtic/CBindingKMP")
+                      credentials { username = System.getenv("GPR_USER"); password = System.getenv("GPR_KEY") }
+                  }
+                  gradlePluginPortal()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "consumer"
+          KTS
+          cat > build.gradle.kts <<KTS
+          plugins { id("com.abyxcz.cbinding") version "$V" }
+          cbinding { jniPackage.set("verify.generated") }
+          KTS
+          gradle tasks --all --console=plain | grep -E '^generateJni'

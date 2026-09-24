@@ -46,6 +46,28 @@ int add_numbers(int a, int b);
 ```
 
 ### 2. Configure the generator
+The plugin is published to GitHub Packages. Add the repository to `pluginManagement`
+(reading GitHub Packages needs a token with `read:packages`, via `GPR_USER`/`GPR_KEY`
+or `gpr.user`/`gpr.key` in `~/.gradle/gradle.properties`):
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/tjmtic/CBindingKMP")
+            credentials {
+                username = System.getenv("GPR_USER") ?: providers.gradleProperty("gpr.user").orNull
+                password = System.getenv("GPR_KEY") ?: providers.gradleProperty("gpr.key").orNull
+            }
+        }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+```
+Working on the plugin itself? `includeBuild("../CBindingKMP/plugin")` inside `pluginManagement`
+substitutes a sibling checkout instead.
+
 ```kotlin
 // build.gradle.kts
 plugins { id("com.abyxcz.cbinding") version "1.1.0" }

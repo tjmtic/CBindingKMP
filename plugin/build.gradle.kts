@@ -21,7 +21,8 @@ tasks.withType<Test>().configureEach {
 }
 
 group = "com.abyxcz.cbinding"
-version = "1.1.0"
+// -PlibVersion=X.Y.Z overrides (the tag-driven publish workflow passes it).
+version = (findProperty("libVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.0"
 
 gradlePlugin {
     plugins {
@@ -37,5 +38,17 @@ gradlePlugin {
 publishing {
     repositories {
         mavenLocal()
+        // Same credential chain as the ViewPoint libs: Actions token in CI,
+        // GPR_USER/GPR_KEY or gpr.user/gpr.key (a PAT with write:packages) locally.
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/tjmtic/CBindingKMP")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: System.getenv("GPR_USER")
+                    ?: findProperty("gpr.user") as String? ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: System.getenv("GPR_KEY")
+                    ?: findProperty("gpr.key") as String? ?: ""
+            }
+        }
     }
 }
