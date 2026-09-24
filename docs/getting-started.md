@@ -34,7 +34,7 @@ cbinding {
 }
 ```
 
-The plugin is currently consumed via composite build (`pluginManagement { includeBuild(".../CBindingKMP/plugin") }` in your `settings.gradle.kts`) or `publishToMavenLocal` + `mavenLocal()`.
+The plugin is published to GitHub Packages (`https://maven.pkg.github.com/tjmtic/CBindingKMP`, see the README for the `pluginManagement` block). For plugin development, `pluginManagement { includeBuild(".../CBindingKMP/plugin") }` substitutes a sibling checkout.
 
 ## Your First Native Function
 
