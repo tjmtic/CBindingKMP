@@ -2,6 +2,44 @@
 
 This reference documentation lists the core Kotlin and C APIs available in CBindingKMP.
 
+## Gradle DSL
+
+### `cbinding { }`
+
+| Property | Default | Meaning |
+|---|---|---|
+| `headersDir` | `native/c` | Directory of C headers to parse |
+| `includeHeaders` | `["mylib.h"]` | Headers `#include`d by the generated JNI bridge |
+| `jniPackage` | `com.abyxcz.cbindingkmp.shared.generated` | Package of the generated Kotlin; drives JNI symbol names |
+| `kotlinFileName` | `GeneratedNative` | Base name of the generated Kotlin file |
+| `outputDir` | `build/generated/jni` | Where the bridge `.c` and the Kotlin file are written |
+
+### `cbinding.prebuilt(name) { ios { } android { } }`
+
+Returns the `PrebuiltSpec`. Tasks: `fetchPrebuilt<Name>Ios`, `fetchPrebuilt<Name>Android`.
+
+`ios { }`
+
+| Member | Default | Meaning |
+|---|---|---|
+| `xcframework(url, sha256, name)` | — | Archive URL, its sha256, and the framework name (`<name>.xcframework`) |
+| `into(dir)` / `destination` | `build/cbinding/prebuilt/<name>/ios` | Directory that receives `<name>.xcframework` |
+| `deviceSlice` | `ios-arm64` | Slice linked by `iosArm64` |
+| `simulatorSlice` | `ios-arm64_x86_64-simulator` | Slice linked by simulator targets |
+| `linkerOpts` | `["-lc++"]` | Flags after `-framework <name>` |
+| `headersDir(device)` | — | Provider of the slice's `Headers`, for your own shim compile |
+
+`android { }`
+
+| Member | Default | Meaning |
+|---|---|---|
+| `aar(coordinates, vararg include)` | includes `headers/**`, `jni/**` | An AAR resolved from the project's repositories |
+| `archive(url, sha256, vararg include)` | includes everything | A remote archive; a single top-level directory is stripped |
+| `destination` | `build/cbinding/prebuilt/<name>/android` | Extraction directory |
+| `cmakeVariable` | `CBINDING_<NAME>_DIR` | CMake variable that receives `destination` |
+
+Every Android build with the plugin also receives `-DCBINDING_JNI_BRIDGE=<outputDir>/jni_gen_bridge.c`.
+
 ## Kotlin API
 
 ### `com.abyxcz.cbindingkmp.shared.NativeLoader`

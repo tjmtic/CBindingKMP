@@ -1,5 +1,7 @@
 package com.abyxcz.buildlogic
 
+import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -19,6 +21,9 @@ import org.gradle.api.provider.Property
  * The plugin registers a `generateJni` task from these values, hooks it before
  * `preBuild`, and adds the generated Kotlin to the `androidMain`/`jvmMain` source
  * sets automatically when the Kotlin Multiplatform plugin is applied.
+ *
+ * Third-party native runtimes the shim links against are declared with [prebuilt];
+ * see [PrebuiltSpec].
  */
 abstract class CBindingExtension {
     /** Directory containing the C headers to parse. */
@@ -35,4 +40,11 @@ abstract class CBindingExtension {
 
     /** Output directory for the generated bridge C and Kotlin files. */
     abstract val outputDir: DirectoryProperty
+
+    /** Third-party native runtimes, by name. Usually configured through [prebuilt]. */
+    abstract val prebuilts: NamedDomainObjectContainer<PrebuiltSpec>
+
+    /** Declares (or reconfigures) the prebuilt runtime [name]. */
+    fun prebuilt(name: String, action: Action<PrebuiltSpec>): PrebuiltSpec =
+        prebuilts.maybeCreate(name).also { action.execute(it) }
 }

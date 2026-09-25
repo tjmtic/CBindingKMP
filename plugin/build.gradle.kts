@@ -5,6 +5,7 @@ plugins {
 }
 
 repositories {
+    google()
     gradlePluginPortal()
     mavenCentral()
 }
@@ -13,6 +14,9 @@ dependencies {
     // compileOnly: at runtime the consumer's own KGP is on the classpath; the
     // sourceSets API used here is stable across the versions we support.
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21")
+    // compileOnly: prebuilt {} adds CMake arguments through the public AGP API; the
+    // consumer's own AGP is on the classpath at runtime.
+    compileOnly("com.android.tools.build:gradle-api:8.13.2")
     testImplementation(kotlin("test"))
 }
 
@@ -22,7 +26,7 @@ tasks.withType<Test>().configureEach {
 
 group = "com.abyxcz.cbinding"
 // -PlibVersion=X.Y.Z overrides (the tag-driven publish workflow passes it).
-version = (findProperty("libVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.1.0"
+version = (findProperty("libVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.2.0"
 
 gradlePlugin {
     plugins {

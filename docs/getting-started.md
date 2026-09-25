@@ -17,7 +17,7 @@ To use CBindingKMP in your project, apply the Gradle plugin in your `shared/buil
 
 ```kotlin
 plugins {
-    id("com.abyxcz.cbinding") version "1.1.0"
+    id("com.abyxcz.cbinding") version "1.2.0"
 }
 
 kotlin {
