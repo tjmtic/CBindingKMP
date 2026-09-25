@@ -25,11 +25,12 @@ The goal is to allow developers to maintain a single C/C++ codebase (e.g., `src/
 - **🚀 Generated Glue**: JNI bridge C and Kotlin `external fun` bindings generated from your headers, with spec-correct symbol mangling.
 - **📦 Real Buffers**: Zero-copy direct `ByteBuffer` marshalling plus primitive-array overloads (`GetPrimitiveArrayCritical`) — pass pixel/model buffers to C, get results back.
 - **🔩 Opaque Handles**: `typedef struct X X;` handles cross the boundary as `Long`.
+- **🔤 Strings**: `const char*` in and a `char* out, int32_t cap` out-buffer, as real UTF-8 (not JNI's modified UTF-8), behind generated `String` wrappers that size the buffer for you. Streaming by polling; see [docs/supported-c-subset.md](docs/supported-c-subset.md#strings).
 - **🍏 iOS Static Linking**: per-target static archives via `staticLibraries`.
 - **📥 Prebuilt runtimes (`prebuilt {}`)**: declare a third-party runtime once (an xcframework for iOS, an AAR or source archive for Android). The plugin fetches it, verifies its sha256, caches it, and wires cinterop include dirs, linker flags, CMake variables and task order. See [docs/ios-prebuilt-linking.md](docs/ios-prebuilt-linking.md).
 - **⚙️ `cbinding {}` DSL**: configure headers, include names, JNI package and output; source sets are wired automatically.
 
-The generator supports a **documented C subset** (scalars, primitive pointers, opaque handles) and fails loudly on anything else — see [docs/supported-c-subset.md](docs/supported-c-subset.md).
+The generator supports a **documented C subset** (scalars, primitive pointers, opaque handles, UTF-8 strings) and fails loudly on anything else — see [docs/supported-c-subset.md](docs/supported-c-subset.md).
 
 ## 📁 Project Structure
 
@@ -71,7 +72,7 @@ substitutes a sibling checkout instead.
 
 ```kotlin
 // build.gradle.kts
-plugins { id("com.abyxcz.cbinding") version "1.2.0" }
+plugins { id("com.abyxcz.cbinding") version "1.3.0" }
 
 cbinding {
     headersDir.set(file("native/c"))

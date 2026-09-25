@@ -1,6 +1,8 @@
 package com.abyxcz.buildlogic
 
 import kotlin.test.Test
+import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -103,9 +105,6 @@ class CHeaderParserTest {
     @Test
     fun `unsupported constructs fail loudly`() {
         assertFailsWith<UnsupportedCDeclarationException> {
-            CHeaderParser.parse("int takes_string(const char* s);")
-        }
-        assertFailsWith<UnsupportedCDeclarationException> {
             CHeaderParser.parse("struct Point make_point(int x, int y);")
         }
         assertFailsWith<UnsupportedCDeclarationException> {
@@ -126,5 +125,43 @@ class CHeaderParserTest {
         )
         assertEquals(listOf("open_it", "close_it"), model.functions.map { it.name })
         assertEquals(CType.OpaqueHandle("ctx", isConst = false), model.functions[1].params[0].type)
+    }
+
+    @Test
+    fun `const char star is a UTF-8 input string`() {
+        val f = CHeaderParser.parse("int32_t utf8_length(const char *text);").functions.single()
+        assertEquals(CType.CString, f.params.single().type)
+        assertTrue(f.hasStrings)
+        assertFalse(f.hasOutString)
+    }
+
+    @Test
+    fun `char star plus capacity at the end is the out-string convention`() {
+        val f = CHeaderParser.parse(
+            """
+            typedef struct lm_ctx lm_ctx;
+            int32_t lm_next_token(lm_ctx* ctx, char* out, int32_t cap);
+            """.trimIndent()
+        ).functions.single()
+        assertEquals(listOf("ctx", "out", "cap"), f.params.map { it.name })
+        assertEquals(CType.CharBuffer, f.params[1].type)
+        assertTrue(f.hasOutString)
+    }
+
+    @Test
+    fun `strings outside the convention are rejected with the reason`() {
+        fun rejects(decl: String, fragment: String) {
+            val e = assertFailsWith<UnsupportedCDeclarationException> { CHeaderParser.parse(decl) }
+            assertTrue(e.message!!.contains(fragment), "'$decl' -> ${e.message}")
+        }
+        rejects("const char* version(void);", "String return types are not supported")
+        rejects("char* dup(const char* s);", "String return types are not supported")
+        rejects("int32_t join(const char** parts, int32_t n);", "arrays of strings are not")
+        rejects("int32_t fill(char** out);", "arrays of strings are not")
+        rejects("int32_t f(char* out, int32_t cap, int32_t flags);", "second to last")
+        rejects("int32_t f(char* out);", "second to last")
+        rejects("void f(const char* in, char* out, int32_t cap);", "returning int32_t")
+        rejects("int32_t f(char* a, int32_t n, char* b, int32_t m);", "second to last")
+        rejects("int32_t f(char* out, float cap);", "second to last")
     }
 }

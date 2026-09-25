@@ -114,4 +114,42 @@ class JniCodegenTest {
             bridge
         )
     }
+
+    @Test
+    fun `string input crosses as a byte array released with JNI_ABORT, not modified UTF-8`() {
+        val bridge = JniCodegen.generate(CHeaderParser.parse("int32_t utf8_length(const char* text);"), config)
+        assertTrue(
+            bridge.contains(
+                "JNIEXPORT jint JNICALL\n" +
+                    "Java_com_abyxcz_cbindingkmp_shared_generated_GeneratedNativeKt_utf8_1lengthUtf8JNI" +
+                    "(JNIEnv *env, jclass clazz, jbyteArray text) {\n" +
+                    "    jbyte* text_ptr = (*env)->GetByteArrayElements(env, text, NULL);\n" +
+                    "    if (text_ptr == NULL) {\n" +
+                    "        return 0; /* OutOfMemoryError already thrown */\n" +
+                    "    }\n" +
+                    "    int32_t result = utf8_length((const char*)text_ptr);\n" +
+                    "    (*env)->ReleaseByteArrayElements(env, text, text_ptr, JNI_ABORT);\n" +
+                    "    return (jint)result;\n" +
+                    "}"
+            ),
+            bridge
+        )
+        assertFalse(bridge.contains("GetStringUTFChars"), "modified UTF-8 would corrupt 4-byte characters")
+        assertFalse(bridge.contains("Critical"), "string calls may run long; no critical sections")
+    }
+
+    @Test
+    fun `out-string buffer copies back and inputs do not`() {
+        val bridge = JniCodegen.generate(
+            CHeaderParser.parse("int32_t greet(const char* name, char* out, int32_t cap);"),
+            config
+        )
+        assertTrue(bridge.contains("GreetUtf8JNI".replaceFirstChar { it.lowercase() }), bridge)
+        assertTrue(bridge.contains("(JNIEnv *env, jclass clazz, jbyteArray name, jbyteArray out, jint cap)"), bridge)
+        assertTrue(bridge.contains("int32_t result = greet((const char*)name_ptr, (char*)out_ptr, (int32_t)cap);"), bridge)
+        assertTrue(bridge.contains("ReleaseByteArrayElements(env, out, out_ptr, 0);"), bridge)
+        assertTrue(bridge.contains("ReleaseByteArrayElements(env, name, name_ptr, JNI_ABORT);"), bridge)
+        // Released in reverse acquisition order.
+        assertTrue(bridge.indexOf("env, out, out_ptr, 0") < bridge.indexOf("env, name, name_ptr, JNI_ABORT"), bridge)
+    }
 }

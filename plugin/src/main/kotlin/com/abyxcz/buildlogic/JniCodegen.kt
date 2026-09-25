@@ -12,6 +12,11 @@ package com.abyxcz.buildlogic
  *   GetPrimitiveArrayCritical / Release(0). Const variants release with JNI_ABORT.
  *   Critical sections contain ONLY the native call — callers must keep long-running
  *   calls on direct ByteBuffers, arrays are for small in/out parameters.
+ * - Strings (`const char*` in, `char*` out-buffer): `jbyteArray` of real UTF-8, encoded and
+ *   decoded by the generated Kotlin wrapper (see [KotlinCodegen]). Pinned with
+ *   Get/ReleaseByteArrayElements, NOT the critical variant: string calls are the ones that
+ *   run long (model prompts, token generation) and must not stall the GC. Inputs release
+ *   with JNI_ABORT; the out buffer copies back.
  *
  * JNI symbol naming (JNI spec 2.2): package dots become `_`; underscores inside
  * identifiers are escaped `_1`. Wrong escaping fails only at runtime
@@ -55,7 +60,7 @@ object JniCodegen {
         config: CodegenConfig,
         byteBufferVariant: Boolean
     ) {
-        val kotlinName = func.name + (if (byteBufferVariant) "" else "Arr") + "JNI"
+        val kotlinName = KotlinCodegen.externalName(func, byteBufferVariant)
         val jniName = symbolFor(config, kotlinName)
 
         val jniParams = StringBuilder("JNIEnv *env, jclass clazz")
@@ -74,6 +79,21 @@ object JniCodegen {
                     jniParams.append(", jlong ${p.name}")
                     val constPrefix = if (t.isConst) "const " else ""
                     callArgs.add("($constPrefix${t.name}*)(intptr_t)${p.name}")
+                }
+                CType.CString, CType.CharBuffer -> {
+                    val isInput = t == CType.CString
+                    jniParams.append(", jbyteArray ${p.name}")
+                    prologue.append(
+                        "    jbyte* ${p.name}_ptr = (*env)->GetByteArrayElements(env, ${p.name}, NULL);\n" +
+                            "    if (${p.name}_ptr == NULL) {\n" +
+                            "        return$defaultReturn; /* OutOfMemoryError already thrown */\n" +
+                            "    }\n"
+                    )
+                    epilogue.insert(
+                        0,
+                        "    (*env)->ReleaseByteArrayElements(env, ${p.name}, ${p.name}_ptr, ${if (isInput) "JNI_ABORT" else "0"});\n"
+                    )
+                    callArgs.add(if (isInput) "(const char*)${p.name}_ptr" else "(char*)${p.name}_ptr")
                 }
                 is CType.Pointer -> {
                     if (t.isConstByteBufferIn(byteBufferVariant)) {
@@ -129,7 +149,7 @@ object JniCodegen {
                 body.append(epilogue)
                 body.append("    return (jlong)(intptr_t)result;\n")
             }
-            is CType.Pointer -> error("unreachable: parser rejects pointer returns")
+            is CType.Pointer, CType.CString, CType.CharBuffer -> error("unreachable: parser rejects pointer returns")
         }
 
         sb.append("JNIEXPORT ${jniReturnType(func.returnType)} JNICALL\n")
@@ -167,7 +187,7 @@ object JniCodegen {
     private fun jniReturnType(t: CType): String = when (t) {
         is CType.Scalar -> scalarJniType(t.name)
         is CType.OpaqueHandle -> "jlong"
-        is CType.Pointer -> error("unreachable")
+        is CType.Pointer, CType.CString, CType.CharBuffer -> error("unreachable")
     }
 
     private fun arrayTypesFor(pointee: String): Pair<String, String> = when (pointee) {

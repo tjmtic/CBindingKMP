@@ -10,10 +10,31 @@ sealed interface CType {
 
     /** Pointer to an opaque struct declared via `typedef struct X X;`. */
     data class OpaqueHandle(val name: String, val isConst: Boolean) : CType
+
+    /** `const char*`: a NUL-terminated UTF-8 input string. */
+    object CString : CType {
+        override fun toString() = "CString"
+    }
+
+    /**
+     * `char*`: only valid as an out-string buffer, second to last and followed by an
+     * `int32_t` capacity, in a function returning `int32_t`. See [CFunction.hasOutString].
+     */
+    object CharBuffer : CType {
+        override fun toString() = "CharBuffer"
+    }
 }
 
 data class CParam(val type: CType, val name: String)
-data class CFunction(val returnType: CType, val name: String, val params: List<CParam>)
+data class CFunction(val returnType: CType, val name: String, val params: List<CParam>) {
+    /** `int32_t f(..., char* out, int32_t cap)`: the caller-buffer out-string convention. */
+    val hasOutString: Boolean
+        get() = params.size >= 2 && params[params.size - 2].type == CType.CharBuffer
+
+    /** Any string crossing the boundary: such functions get a Kotlin wrapper over a raw external. */
+    val hasStrings: Boolean
+        get() = hasOutString || params.any { it.type == CType.CString }
+}
 data class CHeaderModel(val functions: List<CFunction>, val opaqueTypes: Set<String>)
 
 /** Thrown when a header declares something outside the supported subset. */
@@ -32,6 +53,7 @@ object CHeaderParser {
 
     private val scalarTypes = setOf("void", "int", "int32_t", "int64_t", "size_t", "float", "double")
     private val pointerPointees = setOf("uint8_t", "float", "int32_t")
+    // `char` itself is handled separately: `const char*` in, `char*` out-buffer.
     private val typedefOpaqueRegex = Regex("""^typedef\s+struct\s+(\w+)\s+(\w+)$""")
 
     fun parse(content: String): CHeaderModel = parseAll(listOf(content))
@@ -86,9 +108,37 @@ object CHeaderParser {
                 "Primitive-pointer return types are not supported: '$decl;'"
             )
         }
+        if (returnType == CType.CString || returnType == CType.CharBuffer) {
+            throw UnsupportedCDeclarationException(
+                "String return types are not supported (who frees it?): '$decl;'. " +
+                    "Write into a caller buffer instead: 'int32_t $name(..., char* out, int32_t cap);'"
+            )
+        }
 
         val params = parseParams(paramsRaw.trim(), opaqueTypes, decl)
-        return CFunction(returnType, name, params)
+        val function = CFunction(returnType, name, params)
+        validateOutString(function, decl)
+        return function
+    }
+
+    private fun validateOutString(function: CFunction, decl: String) {
+        val buffers = function.params.count { it.type == CType.CharBuffer }
+        if (buffers == 0) return
+        val params = function.params
+        val capacity = params.lastOrNull()?.type
+        val returnsInt32 = (function.returnType as? CType.Scalar)?.name in setOf("int", "int32_t")
+        val ok = buffers == 1 &&
+            function.hasOutString &&
+            (capacity as? CType.Scalar)?.name in setOf("int", "int32_t") &&
+            returnsInt32
+        if (!ok) {
+            throw UnsupportedCDeclarationException(
+                "A mutable 'char*' is only supported as the out-string buffer: second to last, " +
+                    "followed by an int32_t capacity, in a function returning int32_t " +
+                    "(bytes written, or -required capacity), e.g. " +
+                    "'int32_t ${function.name}(..., char* out, int32_t cap);'. Got: '$decl;'"
+            )
+        }
     }
 
     private fun parseParams(raw: String, opaqueTypes: Set<String>, decl: String): List<CParam> {
@@ -108,6 +158,13 @@ object CHeaderParser {
 
         if (base.endsWith("*")) {
             val pointee = base.dropLast(1).trim()
+            if (pointee == "char") return if (isConst) CType.CString else CType.CharBuffer
+            if (pointee.removePrefix("const ").trim().startsWith("char")) {
+                throw UnsupportedCDeclarationException(
+                    "Unsupported string type '$raw' in '$decl;': only 'const char*' (input) and a " +
+                        "'char*' out-string buffer are supported; arrays of strings are not"
+                )
+            }
             return when {
                 pointee in pointerPointees -> CType.Pointer(pointee, isConst)
                 pointee in opaqueTypes -> CType.OpaqueHandle(pointee, isConst)

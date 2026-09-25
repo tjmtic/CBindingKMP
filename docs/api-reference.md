@@ -60,6 +60,10 @@ This is a generated file containing the JNI bindings for your C library. By defa
 -   `external fun <function_name>JNI(...)`:
     -   Direct call to the JNI wrapper for the corresponding C function.
     -   Example: `external fun add_numbersJNI(a: Int, b: Int): Int`.
+-   Functions with strings (1.3.0+) get `external fun <function_name>Utf8JNI(...)` taking UTF-8
+    `ByteArray`s, and a plain `fun <function_name>JNI(...)` wrapper taking `String`s. With an
+    out-string buffer the wrapper drops `out`/`cap`, adds `capacity: Int = 256`, and returns
+    `String`. See [Strings](supported-c-subset.md#strings).
 
 ---
 

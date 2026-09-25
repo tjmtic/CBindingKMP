@@ -3,8 +3,21 @@ package com.abyxcz.buildlogic
 /**
  * Generates the Kotlin file of `external fun` declarations matching the JNI bridge.
  * Pure (no Gradle types).
+ *
+ * Functions that take or produce text get two declarations:
+ * - a raw `external fun <name>Utf8JNI(...)` where each `const char*` is a NUL-terminated
+ *   UTF-8 `ByteArray` and the out-string buffer is a `ByteArray` + capacity;
+ * - a wrapper `fun <name>JNI(...)` with `String` parameters (and a `String` result for the
+ *   out-string convention) that does the encoding, the sizing retry and the decoding.
+ *
+ * Encoding happens in Kotlin, not with JNI's `GetStringUTFChars`: that returns Java's
+ * *modified* UTF-8 (6-byte surrogate pairs for emoji, `C0 80` for NUL), which is not what a
+ * C library expects.
  */
 object KotlinCodegen {
+
+    /** Out-string buffer size tried first; `-n` from the C side resizes once. */
+    const val DEFAULT_CAPACITY = 256
 
     fun generate(model: CHeaderModel, config: CodegenConfig): String {
         val sb = StringBuilder()
@@ -18,18 +31,79 @@ object KotlinCodegen {
             }
         }
 
+        if (model.functions.any { it.hasStrings }) {
+            sb.append(
+                "\n/** NUL-terminated UTF-8 for a `const char*` parameter. */\n" +
+                    "private fun String.cbindingUtf8z(): ByteArray {\n" +
+                    "    val bytes = encodeToByteArray()\n" +
+                    "    return bytes.copyOf(bytes.size + 1)\n" +
+                    "}\n"
+            )
+        }
         return sb.toString()
     }
 
     private fun CType.isConstU8Pointer(): Boolean =
         this is CType.Pointer && pointee == "uint8_t" && isConst
 
+    /** Kotlin name of the declaration the JNI symbol is derived from. */
+    fun externalName(func: CFunction, byteBufferVariant: Boolean): String =
+        func.name + (if (byteBufferVariant) "" else "Arr") + (if (func.hasStrings) "Utf8" else "") + "JNI"
+
     private fun appendVariant(sb: StringBuilder, func: CFunction, byteBufferVariant: Boolean) {
-        val kotlinName = func.name + (if (byteBufferVariant) "" else "Arr") + "JNI"
+        val external = externalName(func, byteBufferVariant)
         val args = func.params.joinToString(", ") { p ->
             "${p.name}: ${kotlinType(p.type, byteBufferVariant)}"
         }
-        sb.append("internal external fun $kotlinName($args): ${kotlinReturnType(func.returnType)}\n")
+        sb.append("internal external fun $external($args): ${kotlinReturnType(func.returnType)}\n")
+        if (func.hasStrings) appendWrapper(sb, func, byteBufferVariant, external)
+    }
+
+    private fun appendWrapper(sb: StringBuilder, func: CFunction, byteBufferVariant: Boolean, external: String) {
+        val wrapperName = func.name + (if (byteBufferVariant) "" else "Arr") + "JNI"
+        val visible = if (func.hasOutString) func.params.dropLast(2) else func.params
+        val taken = func.params.map { it.name }.toSet()
+        val capacityName = generateSequence("capacity") { "${it}_" }.first { it !in taken }
+
+        val wrapperArgs = visible.map { p ->
+            val type = if (p.type == CType.CString) "String" else kotlinType(p.type, byteBufferVariant)
+            "${p.name}: $type"
+        } + if (func.hasOutString) listOf("$capacityName: Int = $DEFAULT_CAPACITY") else emptyList()
+
+        val body = StringBuilder()
+        val callArgs = visible.map { p ->
+            if (p.type == CType.CString) {
+                body.append("    val ${p.name}Utf8 = ${p.name}.cbindingUtf8z()\n")
+                "${p.name}Utf8"
+            } else {
+                p.name
+            }
+        }
+
+        if (func.hasOutString) {
+            val call = { buf: String -> "$external(${(callArgs + listOf(buf, "$buf.size")).joinToString(", ")})" }
+            body.append("    require($capacityName > 0) { \"${func.name}: capacity must be positive, was \$$capacityName\" }\n")
+            body.append("    var cbindingBuf = ByteArray($capacityName)\n")
+            body.append("    var cbindingN = ${call("cbindingBuf")}\n")
+            body.append("    if (cbindingN < 0) {\n")
+            body.append("        // Too small: -n is the capacity the C side needs. It must not have consumed state.\n")
+            body.append("        cbindingBuf = ByteArray(-cbindingN)\n")
+            body.append("        cbindingN = ${call("cbindingBuf")}\n")
+            body.append("    }\n")
+            body.append(
+                "    check(cbindingN in 0..cbindingBuf.size) {\n" +
+                    "        \"${func.name}: returned \$cbindingN for a \${cbindingBuf.size}-byte buffer\"\n" +
+                    "    }\n"
+            )
+            body.append("    return cbindingBuf.decodeToString(0, cbindingN)\n")
+            sb.append("internal fun $wrapperName(${wrapperArgs.joinToString(", ")}): String {\n")
+        } else {
+            val ret = kotlinReturnType(func.returnType)
+            body.append("    return $external(${callArgs.joinToString(", ")})\n")
+            sb.append("internal fun $wrapperName(${wrapperArgs.joinToString(", ")}): $ret {\n")
+        }
+        sb.append(body)
+        sb.append("}\n")
     }
 
     private fun kotlinType(t: CType, byteBufferVariant: Boolean): String = when (t) {
@@ -42,12 +116,13 @@ object KotlinCodegen {
             "int32_t" -> "IntArray"
             else -> error("Unsupported pointee: ${t.pointee}")
         }
+        CType.CString, CType.CharBuffer -> "ByteArray"
     }
 
     private fun kotlinReturnType(t: CType): String = when (t) {
         is CType.Scalar -> scalarKotlinType(t.name)
         is CType.OpaqueHandle -> "Long"
-        is CType.Pointer -> error("unreachable: parser rejects pointer returns")
+        is CType.Pointer, CType.CString, CType.CharBuffer -> error("unreachable: parser rejects pointer returns")
     }
 
     private fun scalarKotlinType(name: String): String = when (name) {

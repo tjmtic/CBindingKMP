@@ -26,7 +26,7 @@ tasks.withType<Test>().configureEach {
 
 group = "com.abyxcz.cbinding"
 // -PlibVersion=X.Y.Z overrides (the tag-driven publish workflow passes it).
-version = (findProperty("libVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.2.0"
+version = (findProperty("libVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.3.0"
 
 gradlePlugin {
     plugins {
