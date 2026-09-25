@@ -33,7 +33,7 @@ What the plugin does:
 |---|---|---|
 | Fetch | Downloads the archive once into `~/.gradle/caches/cbinding-prebuilt/<sha256>/`, verifies the hash, fails with both hashes on a mismatch | Resolves the AAR from your repositories (or downloads `archive(url, sha256)` the same way) |
 | Extract | Keeps only `<name>.xcframework`, checks the device and simulator slices exist, lists the real ones if not | Keeps `headers/**` and `jni/**` of an AAR; strips a single top-level directory of an archive |
-| Wire | Adds the slice's `Headers` to every cinterop, `-F<slice> -framework <name> -lc++` to every non-static binary (test executables, dynamic frameworks), and makes cinterop and link tasks depend on the fetch | Passes `-D<cmakeVariable>=<dir>` and `-DCBINDING_JNI_BRIDGE=<generated bridge>` to CMake, and runs the fetch before `preBuild` (AGP runs the CMake tasks after it) |
+| Wire | Adds the slice's `Headers` to every cinterop, `-F<slice> -framework <name> -lc++ -rpath <slice>` to every non-static binary (test executables, dynamic frameworks), and makes cinterop and link tasks depend on the fetch. The `-rpath` lets a test executable load a *dynamic* xcframework (e.g. llama.cpp's); an app embeds it instead | Passes `-D<cmakeVariable>=<dir>` and `-DCBINDING_JNI_BRIDGE=<generated bridge>` to CMake, and runs the fetch before `preBuild` (AGP runs the CMake tasks after it) |
 
 Archives can be `.zip`, `.tar.gz`, `.tgz` or `.tar`. Slices default to `ios-arm64` and
 `ios-arm64_x86_64-simulator`; set `deviceSlice` / `simulatorSlice` for other layouts, and

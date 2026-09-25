@@ -12,8 +12,10 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 internal object IosPrebuiltWiring {
     /**
      * iOS: every cinterop gets the framework headers and waits for the fetch; every
-     * non-static binary links `-F<slice> -framework <name>` (static frameworks and
-     * libraries resolve those symbols in the final app link, i.e. Xcode).
+     * non-static binary links `-F<slice> -framework <name>` plus `-rpath <slice>`, so a
+     * dynamic framework is found at run time by K/N test executables (static frameworks
+     * and libraries resolve those symbols in the final app link, i.e. Xcode, which embeds
+     * a dynamic framework itself).
      */
     fun wire(project: Project, kmp: KotlinMultiplatformExtension, extension: CBindingExtension) {
         val specs = extension.prebuilts.filter { it.ios.isConfigured }
@@ -29,7 +31,8 @@ internal object IosPrebuiltWiring {
                     val headers = spec.ios.headersDir(device).get().asFile
                     val flags =
                         listOf("-F${slice.absolutePath}", "-framework", spec.ios.frameworkName.get()) +
-                            spec.ios.linkerOpts.get()
+                            spec.ios.linkerOpts.get() +
+                            listOf("-rpath", slice.absolutePath)
                     target.compilations.all {
                         cinterops.all {
                             includeDirs(headers)
